@@ -121,9 +121,28 @@ export default function DoctorSignup() {
       if (authError) throw authError;
 
       if (authData.user) {
+        // Generate 5-digit doctor_id
+        const { data: existingDoctors, error: fetchError } = await supabase
+          .from("doctor")
+          .select("doctor_id")
+          .order("doctor_id", { ascending: false })
+          .limit(1);
+
+        let nextDoctorId = "10001"; // Start from 10001 for 5-digit IDs
+        
+        if (!fetchError && existingDoctors && existingDoctors.length > 0) {
+          const lastDoctorId = existingDoctors[0].doctor_id;
+          if (lastDoctorId) {
+            const nextId = parseInt(lastDoctorId) + 1;
+            nextDoctorId = nextId.toString().padStart(5, '0');
+          }
+        }
+
         const { error: insertError } = await supabase.from("doctor").insert([
           {
             id: authData.user.id,
+            user_id: authData.user.id,
+            doctor_id: nextDoctorId,
             first_name: formData.first_name,
             middle_name: formData.middle_name,
             last_name: formData.last_name,
