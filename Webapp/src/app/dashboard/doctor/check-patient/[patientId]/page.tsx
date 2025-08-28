@@ -23,6 +23,8 @@ import {
   Pill
 } from "lucide-react";
 import { useRouter, useParams } from 'next/navigation';
+import { fetchLatestPatientData } from '@/lib/fetchHealthData';
+import { getMlPrediction } from '@/lib/getPrediction';
 
 interface PatientData {
   id: string;
@@ -103,6 +105,8 @@ const CheckPatientPage = () => {
   const [prediction, setPrediction] = useState<any>(null);
   const [predictionLoading, setPredictionLoading] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [mlPrediction, setMlPrediction] = useState<any>(null);
+  const [mlPredictionLoading, setMlPredictionLoading] = useState(false);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -114,6 +118,7 @@ const CheckPatientPage = () => {
       fetchPatientData();
       fetchDoctorId();
       fetchPrediction();
+      fetchMlPrediction();
     }
   }, [patientId]);
 
@@ -151,6 +156,28 @@ const CheckPatientPage = () => {
       console.error('Error fetching prediction:', error);
     } finally {
       setPredictionLoading(false);
+    }
+  };
+
+  const fetchMlPrediction = async () => {
+    setMlPredictionLoading(true);
+    try {
+      // Fetch latest patient health data
+      const healthData = await fetchLatestPatientData(patientId);
+      
+      // Get ML prediction
+      const mlResult = await getMlPrediction(healthData);
+      
+      if (mlResult.success) {
+        setMlPrediction(mlResult);
+      } else {
+        console.error('ML Prediction error:', mlResult);
+      }
+    } catch (error) {
+      console.error('Error fetching ML prediction:', error);
+      setMlPrediction(null);
+    } finally {
+      setMlPredictionLoading(false);
     }
   };
 
@@ -677,7 +704,63 @@ const CheckPatientPage = () => {
           {/* Medical History */}
           <div className="lg:col-span-3">
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-black">Medical History</h2>
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-black">Medical History</h2>
+                
+                {/* ML Model Prediction Card */}
+                <Card className="w-80 shadow-lg bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 border-0 backdrop-blur-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center space-x-2 text-black text-sm">
+                      <Activity className="w-4 h-4 text-orange-500" />
+                      <span>ML Disease Prediction</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {mlPredictionLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
+                        <span className="ml-2 text-xs text-black">Analyzing...</span>
+                      </div>
+                    ) : mlPrediction ? (
+                      <div className="space-y-2">
+                        <div className="text-xs text-gray-600 mb-2">
+                          Confidence: {(mlPrediction.model_info?.prediction_confidence * 100).toFixed(1)}%
+                        </div>
+                        {Object.entries(mlPrediction.probabilities).map(([disease, probability]) => (
+                          <div key={disease} className="space-y-1">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs font-medium text-black">{disease}</span>
+                              <span className="text-xs text-black">{((probability as number) * 100).toFixed(1)}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div 
+                                className={`h-1.5 rounded-full ${
+                                  (probability as number) > 0.7 ? 'bg-red-500' :
+                                  (probability as number) > 0.4 ? 'bg-yellow-500' : 'bg-green-500'
+                                }`}
+                                style={{ width: `${(probability as number) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="text-xs text-gray-500 mt-2 pt-2 border-t">
+                          Features: {mlPrediction.model_info?.features_used}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-xs text-black mb-2">No ML prediction available</p>
+                        <button
+                          onClick={fetchMlPrediction}
+                          className="px-3 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700"
+                        >
+                          Generate
+                        </button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
