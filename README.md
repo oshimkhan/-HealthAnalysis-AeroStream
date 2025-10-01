@@ -544,14 +544,6 @@ Contributors will be recognized in:
 - **Q3 2024**: Launch mobile applications
 - **Q4 2024**: Advanced AI features
 
-## 🏗 Architecture
-
-![Architecture](public/AeroStream_Arch.png)
-
-## 📱 Screenshots
-
-### Landing Page
-![Landing Page](public/AeroStream.jpeg)
 
 ### OTP Verification
 ![Twilio OTP](public/Twilio_OTP.jpeg)
@@ -559,12 +551,6 @@ Contributors will be recognized in:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 Authors
-
-- **Rahul Yadav** - [rahul-yadav.com.np](https://rahul-yadav.com.np/)
-- **Aashish Mahato**
-- **Oshim Pathan**
 
 ## 🙏 Acknowledgments
 
